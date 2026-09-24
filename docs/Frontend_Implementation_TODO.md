@@ -132,8 +132,8 @@ Verifikasi lokal 2026-09-24:
 - [x] Riwayat attendance tersedia
 - [x] Search dan pagination riwayat tersedia
 - [x] Implementasikan retry network maksimal dua kali dengan backoff 500/1500 ms
-- [ ] Bedakan UX untuk validation, not found, conflict, dan server error
-- [ ] Tampilkan request ID untuk kebutuhan tracing
+- [x] Bedakan UX untuk validation, not found, conflict, dan server error
+- [x] Tampilkan request ID atau event ID untuk kebutuhan tracing
 - [ ] Verifikasi duplicate check-in/check-out menghasilkan UX yang benar
 - [ ] Verifikasi attendance di luar radius lokasi
 - [ ] Verifikasi wajah tidak cocok dan lebih dari satu wajah

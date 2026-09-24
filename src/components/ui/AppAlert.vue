@@ -27,12 +27,15 @@ const styles: Record<ToastVariant, string> = {
   <div
     class="flex items-start gap-3 rounded-lg border p-3.5"
     :class="styles[variant]"
-    role="status"
+    :role="variant === 'error' ? 'alert' : 'status'"
   >
     <component :is="icons[variant]" :size="19" class="mt-0.5 shrink-0" />
     <div class="min-w-0 flex-1">
       <p v-if="title" class="text-sm font-extrabold">{{ title }}</p>
       <p class="text-sm leading-6" :class="{ 'mt-0.5': title }">{{ message }}</p>
+      <div v-if="$slots.action" class="mt-3 flex flex-wrap items-center gap-2">
+        <slot name="action" />
+      </div>
     </div>
     <button
       v-if="dismissible"

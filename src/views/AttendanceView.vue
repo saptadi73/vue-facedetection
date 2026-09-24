@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import {
   Check,
   LocateFixed,
@@ -12,6 +12,7 @@ import {
 } from '@lucide/vue'
 
 import { attendanceApi } from '@/api/services'
+import { presentAttendanceError, type ApiErrorPresentation } from '@/api/errorPresentation'
 import CameraPreview from '@/components/camera/CameraPreview.vue'
 import AppAlert from '@/components/ui/AppAlert.vue'
 import AppCard from '@/components/ui/AppCard.vue'
@@ -24,7 +25,7 @@ const camera = ref<InstanceType<typeof CameraPreview> | null>(null)
 const toast = useToastStore()
 const action = ref<'checkin' | 'checkout'>('checkin')
 const submitting = ref(false)
-const submitError = ref('')
+const submitError = ref<ApiErrorPresentation | null>(null)
 const result = ref<AttendanceResult | null>(null)
 const eventId = ref(crypto.randomUUID())
 const {
@@ -53,14 +54,16 @@ async function locate() {
   }
 }
 async function submit() {
-  submitError.value = ''
+  submitError.value = null
   result.value = null
   if (!coords.value) {
-    submitError.value = 'Ambil lokasi terlebih dahulu.'
+    submitError.value = presentAttendanceError(new Error('Ambil lokasi terlebih dahulu.'))
     return
   }
   if (quality.value === 'poor') {
-    submitError.value = 'Akurasi GPS lebih dari 50 meter. Ambil ulang lokasi.'
+    submitError.value = presentAttendanceError(
+      new Error('Akurasi GPS lebih dari 50 meter. Ambil ulang lokasi.'),
+    )
     return
   }
   submitting.value = true
@@ -84,12 +87,17 @@ async function submit() {
     )
     eventId.value = crypto.randomUUID()
   } catch (reason) {
-    submitError.value = reason instanceof Error ? reason.message : 'Presensi gagal dikirim.'
+    submitError.value = presentAttendanceError(reason)
   } finally {
     imageBase64 = null
     submitting.value = false
   }
 }
+watch(action, () => {
+  eventId.value = crypto.randomUUID()
+  submitError.value = null
+  result.value = null
+})
 onMounted(locate)
 </script>
 
@@ -105,7 +113,7 @@ onMounted(locate)
       <div class="space-y-4">
         <AppCard>
           <p class="mb-3 text-sm font-bold text-ink-800">Pilih aktivitas</p>
-          <div class="grid grid-cols-2 rounded-lg bg-black/[0.05] p-1">
+          <div class="grid grid-cols-2 rounded-lg bg-black/5 p-1">
             <button
               v-for="option in [
                 { value: 'checkin', label: 'Masuk', icon: LogIn },
@@ -131,7 +139,7 @@ onMounted(locate)
                     : quality === 'fair'
                       ? 'bg-sun-400/20 text-[#987518]'
                       : 'bg-coral-500/10 text-coral-500'
-                  : 'bg-black/[0.05] text-ink-600'
+                  : 'bg-black/5 text-ink-600'
               "
             >
               <MapPin :size="21" />
@@ -161,12 +169,39 @@ onMounted(locate)
         </div>
         <AppAlert
           v-if="submitError"
-          variant="error"
-          title="Presensi belum terkirim"
-          :message="submitError"
+          :variant="submitError.variant"
+          :title="submitError.title"
+          :message="submitError.message"
           dismissible
-          @dismiss="submitError = ''"
-        />
+          @dismiss="submitError = null"
+        >
+          <template #action>
+            <BaseButton
+              v-if="submitError.retryable"
+              variant="secondary"
+              :loading="submitting"
+              @click="submit"
+            >
+              <RefreshCw :size="16" /> Coba lagi
+            </BaseButton>
+            <RouterLink
+              v-if="submitError.showHistory"
+              to="/history"
+              class="focus-ring inline-flex min-h-11 items-center rounded-lg border border-black/10 bg-white px-4 text-sm font-bold text-ink-950"
+            >
+              Lihat riwayat
+            </RouterLink>
+            <span
+              v-if="submitError.kind !== 'local'"
+              class="break-all font-mono text-[10px] text-ink-600"
+            >
+              Event ID: {{ eventId
+              }}<template v-if="submitError.requestId">
+                · Request ID: {{ submitError.requestId }}</template
+              >
+            </span>
+          </template>
+        </AppAlert>
         <BaseButton class="w-full" :loading="submitting" :disabled="!canSubmit" @click="submit"
           ><ScanFace :size="19" /> Verifikasi &
           {{ action === 'checkin' ? 'masuk' : 'pulang' }}</BaseButton
