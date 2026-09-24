@@ -1,4 +1,4 @@
-import { apiClient, unwrap } from './client'
+import { apiClient, unwrap, withNetworkRetry } from './client'
 import type {
   ApiEnvelope,
   AttendanceRequest,
@@ -24,7 +24,9 @@ export const authApi = {
 
 export const attendanceApi = {
   submit: (action: 'checkin' | 'checkout', payload: AttendanceRequest) =>
-    unwrap<AttendanceResult>(apiClient.post(`/api/v1/attendance/${action}`, payload)),
+    unwrap<AttendanceResult>(
+      withNetworkRetry(() => apiClient.post(`/api/v1/attendance/${action}`, payload)),
+    ),
   history: (employeeId?: string, limit = 30) =>
     unwrap<ListData<AttendanceResult>>(
       apiClient.get('/api/v1/attendance/history', {
@@ -40,10 +42,12 @@ export const enrollmentApi = {
     unwrap<EnrollmentStatus>(apiClient.post('/api/v1/face/enroll/start', payload)),
   sample: (employeeId: string, imageBase64: string) =>
     unwrap<EnrollmentSample>(
-      apiClient.post('/api/v1/face/enroll/sample', {
-        employee_id: employeeId,
-        image_base64: imageBase64,
-      }),
+      withNetworkRetry(() =>
+        apiClient.post('/api/v1/face/enroll/sample', {
+          employee_id: employeeId,
+          image_base64: imageBase64,
+        }),
+      ),
     ),
   finish: (employeeId: string) =>
     unwrap<EnrollmentStatus & { templates_created: number; embedding_provider: string }>(

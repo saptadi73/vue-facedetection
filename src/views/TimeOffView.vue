@@ -8,11 +8,14 @@ import AppModal from '@/components/ui/AppModal.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 import DataTable from '@/components/ui/DataTable.vue'
+import ErrorState from '@/components/ui/ErrorState.vue'
 import LoadingSkeleton from '@/components/ui/LoadingSkeleton.vue'
 import { useAuthStore } from '@/stores/auth'
+import { useToastStore } from '@/stores/toast'
 import type { TimeOffItem, TimeOffType } from '@/types/api'
 
 const auth = useAuthStore()
+const toast = useToastStore()
 const loading = ref(true)
 const saving = ref(false)
 const error = ref('')
@@ -42,6 +45,7 @@ function formatDate(value: string) {
 async function load() {
   if (!auth.employee) return
   loading.value = true
+  error.value = ''
   try {
     const [requests, leaveTypes] = await Promise.all([
       hrApi.timeOff(auth.employee.id),
@@ -68,9 +72,13 @@ async function createRequest() {
     })
     modalOpen.value = false
     form.value = { leave_type_id: '', date_from: '', date_to: '', description: '' }
+    toast.success('Pengajuan terkirim', 'Permintaan cuti diteruskan ke proses persetujuan.')
     await load()
   } catch (reason) {
-    error.value = reason instanceof Error ? reason.message : 'Pengajuan gagal dikirim.'
+    toast.error(
+      'Pengajuan gagal',
+      reason instanceof Error ? reason.message : 'Pengajuan gagal dikirim.',
+    )
   } finally {
     saving.value = false
   }
@@ -81,9 +89,13 @@ async function cancelRequest() {
   try {
     await hrApi.cancelTimeOff(cancelTarget.value.id)
     cancelTarget.value = null
+    toast.success('Pengajuan dibatalkan')
     await load()
   } catch (reason) {
-    error.value = reason instanceof Error ? reason.message : 'Cuti gagal dibatalkan.'
+    toast.error(
+      'Pembatalan gagal',
+      reason instanceof Error ? reason.message : 'Cuti gagal dibatalkan.',
+    )
   } finally {
     saving.value = false
   }
@@ -101,14 +113,13 @@ onMounted(load)
       </div>
       <BaseButton @click="modalOpen = true"><CalendarPlus :size="18" /> Ajukan cuti</BaseButton>
     </header>
-    <p
-      v-if="error"
-      class="mb-4 rounded-lg bg-coral-500/10 p-3 text-sm font-semibold text-coral-500"
-    >
-      {{ error }}
-    </p>
     <AppCard
-      ><LoadingSkeleton v-if="loading" :rows="5" /><DataTable
+      ><LoadingSkeleton v-if="loading" :rows="5" /><ErrorState
+        v-else-if="error"
+        :message="error"
+        :loading="loading"
+        @retry="load"
+      /><DataTable
         v-else
         :rows="rows"
         :columns="columns"

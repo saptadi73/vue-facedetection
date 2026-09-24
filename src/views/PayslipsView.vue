@@ -5,11 +5,14 @@ import { Download, FileText } from '@lucide/vue'
 import { hrApi } from '@/api/services'
 import AppCard from '@/components/ui/AppCard.vue'
 import DataTable from '@/components/ui/DataTable.vue'
+import ErrorState from '@/components/ui/ErrorState.vue'
 import LoadingSkeleton from '@/components/ui/LoadingSkeleton.vue'
 import { useAuthStore } from '@/stores/auth'
+import { useToastStore } from '@/stores/toast'
 import type { PayslipItem } from '@/types/api'
 
 const auth = useAuthStore()
+const toast = useToastStore()
 const rows = ref<PayslipItem[]>([])
 const loading = ref(true)
 const downloading = ref<number | null>(null)
@@ -26,6 +29,8 @@ function formatDate(value: string) {
 }
 async function load() {
   if (!auth.employee) return
+  loading.value = true
+  error.value = ''
   try {
     rows.value = (await hrApi.payslips(auth.employee.id)).items
   } catch (reason) {
@@ -44,8 +49,9 @@ async function download(item: PayslipItem) {
     link.download = `${item.name || `payslip-${item.id}`}.pdf`
     link.click()
     URL.revokeObjectURL(url)
+    toast.success('PDF berhasil diunduh', item.name)
   } catch (reason) {
-    error.value = reason instanceof Error ? reason.message : 'PDF gagal diunduh.'
+    toast.error('Unduhan gagal', reason instanceof Error ? reason.message : 'PDF gagal diunduh.')
   } finally {
     downloading.value = null
   }
@@ -60,14 +66,13 @@ onMounted(load)
       <h1 class="mt-1 font-display text-2xl font-extrabold sm:text-3xl">Slip gaji</h1>
       <p class="mt-1 text-sm text-ink-600">Dokumen payroll resmi dari Odoo.</p>
     </header>
-    <p
-      v-if="error"
-      class="mb-4 rounded-lg bg-coral-500/10 p-3 text-sm font-semibold text-coral-500"
-    >
-      {{ error }}
-    </p>
     <AppCard
-      ><LoadingSkeleton v-if="loading" :rows="5" /><DataTable
+      ><LoadingSkeleton v-if="loading" :rows="5" /><ErrorState
+        v-else-if="error"
+        :message="error"
+        :loading="loading"
+        @retry="load"
+      /><DataTable
         v-else
         :rows="rows"
         :columns="columns"

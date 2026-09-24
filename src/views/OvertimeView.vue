@@ -7,11 +7,14 @@ import AppCard from '@/components/ui/AppCard.vue'
 import AppModal from '@/components/ui/AppModal.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import DataTable from '@/components/ui/DataTable.vue'
+import ErrorState from '@/components/ui/ErrorState.vue'
 import LoadingSkeleton from '@/components/ui/LoadingSkeleton.vue'
 import { useAuthStore } from '@/stores/auth'
+import { useToastStore } from '@/stores/toast'
 import type { OvertimeItem } from '@/types/api'
 
 const auth = useAuthStore()
+const toast = useToastStore()
 const rows = ref<OvertimeItem[]>([])
 const loading = ref(true)
 const saving = ref(false)
@@ -30,6 +33,7 @@ function formatDate(value: string) {
 async function load() {
   if (!auth.employee) return
   loading.value = true
+  error.value = ''
   try {
     rows.value = (await hrApi.overtime(auth.employee.id)).items
   } catch (reason) {
@@ -45,9 +49,13 @@ async function createRequest() {
     await hrApi.createOvertime({ employee_id: auth.employee.id, ...form.value })
     modalOpen.value = false
     form.value = { date: '', duration_hours: 1, description: '' }
+    toast.success('Lembur diajukan', 'Permintaan telah diteruskan ke proses persetujuan.')
     await load()
   } catch (reason) {
-    error.value = reason instanceof Error ? reason.message : 'Pengajuan lembur gagal.'
+    toast.error(
+      'Pengajuan gagal',
+      reason instanceof Error ? reason.message : 'Pengajuan lembur gagal.',
+    )
   } finally {
     saving.value = false
   }
@@ -65,14 +73,13 @@ onMounted(load)
       </div>
       <BaseButton @click="modalOpen = true"><Plus :size="18" /> Ajukan lembur</BaseButton>
     </header>
-    <p
-      v-if="error"
-      class="mb-4 rounded-lg bg-coral-500/10 p-3 text-sm font-semibold text-coral-500"
-    >
-      {{ error }}
-    </p>
     <AppCard
-      ><LoadingSkeleton v-if="loading" :rows="5" /><DataTable
+      ><LoadingSkeleton v-if="loading" :rows="5" /><ErrorState
+        v-else-if="error"
+        :message="error"
+        :loading="loading"
+        @retry="load"
+      /><DataTable
         v-else
         :rows="rows"
         :columns="columns"

@@ -2,6 +2,8 @@
 import { computed, ref, watch } from 'vue'
 import { ChevronLeft, ChevronRight, Search } from '@lucide/vue'
 
+import EmptyState from './EmptyState.vue'
+
 interface Column {
   key: string
   label: string
@@ -117,9 +119,16 @@ watch(totalPages, (total) => {
       </table>
     </div>
 
-    <div v-if="!visibleRows.length" class="py-10 text-center text-sm text-ink-600">
-      {{ emptyText }}
-    </div>
+    <EmptyState
+      v-if="!visibleRows.length"
+      compact
+      :title="query ? 'Data tidak ditemukan' : emptyText"
+      :message="
+        query
+          ? `Tidak ada data yang cocok dengan pencarian “${query}”.`
+          : 'Data baru akan muncul di sini setelah tersedia.'
+      "
+    />
     <footer
       v-if="filtered.length"
       class="mt-4 flex items-center justify-between border-t border-black/[0.07] pt-3 text-xs text-ink-600"

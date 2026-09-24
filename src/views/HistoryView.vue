@@ -5,6 +5,7 @@ import { LogIn, LogOut, MapPin } from '@lucide/vue'
 import { attendanceApi } from '@/api/services'
 import AppCard from '@/components/ui/AppCard.vue'
 import DataTable from '@/components/ui/DataTable.vue'
+import ErrorState from '@/components/ui/ErrorState.vue'
 import LoadingSkeleton from '@/components/ui/LoadingSkeleton.vue'
 import { useAuthStore } from '@/stores/auth'
 import type { AttendanceResult } from '@/types/api'
@@ -20,7 +21,9 @@ const columns = [
   { key: 'gps_accuracy_meters', label: 'Lokasi' },
   { key: 'status', label: 'Status' },
 ]
-onMounted(async () => {
+async function load() {
+  loading.value = true
+  error.value = ''
   try {
     rows.value = (
       await attendanceApi.history(auth.employee?.id ? String(auth.employee.id) : undefined, 100)
@@ -30,7 +33,8 @@ onMounted(async () => {
   } finally {
     loading.value = false
   }
-})
+}
+onMounted(load)
 </script>
 
 <template>
@@ -40,14 +44,13 @@ onMounted(async () => {
       <h1 class="mt-1 font-display text-2xl font-extrabold sm:text-3xl">Riwayat presensi</h1>
       <p class="mt-1 text-sm text-ink-600">Semua percobaan presensi yang tercatat.</p>
     </header>
-    <p
-      v-if="error"
-      class="mb-4 rounded-lg bg-coral-500/10 p-3 text-sm font-semibold text-coral-500"
-    >
-      {{ error }}
-    </p>
     <AppCard
-      ><LoadingSkeleton v-if="loading" :rows="6" /><DataTable
+      ><LoadingSkeleton v-if="loading" :rows="6" /><ErrorState
+        v-else-if="error"
+        :message="error"
+        :loading="loading"
+        @retry="load"
+      /><DataTable
         v-else
         :rows="rows"
         :columns="columns"

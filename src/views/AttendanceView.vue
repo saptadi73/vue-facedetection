@@ -13,12 +13,15 @@ import {
 
 import { attendanceApi } from '@/api/services'
 import CameraPreview from '@/components/camera/CameraPreview.vue'
+import AppAlert from '@/components/ui/AppAlert.vue'
 import AppCard from '@/components/ui/AppCard.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import { useGeolocation } from '@/composables/useGeolocation'
+import { useToastStore } from '@/stores/toast'
 import type { AttendanceResult } from '@/types/api'
 
 const camera = ref<InstanceType<typeof CameraPreview> | null>(null)
+const toast = useToastStore()
 const action = ref<'checkin' | 'checkout'>('checkin')
 const submitting = ref(false)
 const submitError = ref('')
@@ -61,8 +64,9 @@ async function submit() {
     return
   }
   submitting.value = true
+  let imageBase64: string | null = null
   try {
-    const imageBase64 = camera.value?.capture()
+    imageBase64 = camera.value?.capture() ?? null
     if (!imageBase64) throw new Error('Aktifkan kamera terlebih dahulu.')
     result.value = await attendanceApi.submit(action.value, {
       event_id: eventId.value,
@@ -72,10 +76,17 @@ async function submit() {
       gps_accuracy_meters: coords.value.accuracy,
       gps_provider: 'browser',
     })
+    toast.success(
+      result.value.matched ? 'Presensi berhasil' : 'Wajah belum dikenali',
+      result.value.matched
+        ? 'Kehadiran Anda telah dicatat.'
+        : 'Silakan perbaiki posisi wajah dan coba lagi.',
+    )
     eventId.value = crypto.randomUUID()
   } catch (reason) {
     submitError.value = reason instanceof Error ? reason.message : 'Presensi gagal dikirim.'
   } finally {
+    imageBase64 = null
     submitting.value = false
   }
 }
@@ -142,20 +153,20 @@ onMounted(locate)
               <RefreshCw :size="17" :class="{ 'animate-spin': locating }" />
             </button>
           </div>
-          <p v-if="locationError" class="mt-3 text-xs font-semibold text-coral-500">
-            {{ locationError }}
-          </p>
+          <AppAlert v-if="locationError" class="mt-3" variant="warning" :message="locationError" />
         </AppCard>
         <div class="flex items-center gap-2 px-1 text-xs text-ink-600">
           <ShieldCheck :size="16" class="text-mint-600" /> Foto hanya diproses untuk verifikasi
           kehadiran.
         </div>
-        <p
+        <AppAlert
           v-if="submitError"
-          class="rounded-lg bg-coral-500/10 p-3 text-sm font-semibold text-coral-500"
-        >
-          {{ submitError }}
-        </p>
+          variant="error"
+          title="Presensi belum terkirim"
+          :message="submitError"
+          dismissible
+          @dismiss="submitError = ''"
+        />
         <BaseButton class="w-full" :loading="submitting" :disabled="!canSubmit" @click="submit"
           ><ScanFace :size="19" /> Verifikasi &
           {{ action === 'checkin' ? 'masuk' : 'pulang' }}</BaseButton

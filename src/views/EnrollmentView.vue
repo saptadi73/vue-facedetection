@@ -4,6 +4,9 @@ import { Check, CircleCheck, Fingerprint, ScanFace, Sparkles } from '@lucide/vue
 
 import { enrollmentApi } from '@/api/services'
 import CameraPreview from '@/components/camera/CameraPreview.vue'
+import CaptureAngleGuide from '@/components/camera/CaptureAngleGuide.vue'
+import EnrollmentSampleMetrics from '@/components/camera/EnrollmentSampleMetrics.vue'
+import AppAlert from '@/components/ui/AppAlert.vue'
 import AppCard from '@/components/ui/AppCard.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import LoadingSkeleton from '@/components/ui/LoadingSkeleton.vue'
@@ -17,6 +20,7 @@ const samples = ref<EnrollmentSample[]>([])
 const loading = ref(true)
 const working = ref(false)
 const message = ref('')
+const embeddingProvider = ref<string | null>(null)
 const employeeId = computed(() => String(auth.employee?.id || ''))
 const accepted = computed(
   () =>
@@ -58,10 +62,11 @@ async function start() {
 async function captureSample() {
   working.value = true
   message.value = ''
+  let imageBase64: string | null = null
   try {
-    const image = camera.value?.capture()
-    if (!image) throw new Error('Aktifkan kamera terlebih dahulu.')
-    const sample = await enrollmentApi.sample(employeeId.value, image)
+    imageBase64 = camera.value?.capture() ?? null
+    if (!imageBase64) throw new Error('Aktifkan kamera terlebih dahulu.')
+    const sample = await enrollmentApi.sample(employeeId.value, imageBase64)
     samples.value.push(sample)
     message.value = sample.accepted
       ? 'Sampel diterima. Ubah sedikit sudut wajah.'
@@ -69,6 +74,7 @@ async function captureSample() {
   } catch (reason) {
     message.value = reason instanceof Error ? reason.message : 'Sampel gagal dikirim.'
   } finally {
+    imageBase64 = null
     working.value = false
   }
 }
@@ -76,8 +82,10 @@ async function finish() {
   working.value = true
   message.value = ''
   try {
-    status.value = await enrollmentApi.finish(employeeId.value)
-    message.value = 'Template wajah berhasil dibuat.'
+    const completed = await enrollmentApi.finish(employeeId.value)
+    status.value = completed
+    embeddingProvider.value = completed.embedding_provider
+    message.value = `Template wajah berhasil dibuat dengan provider ${completed.embedding_provider.toUpperCase()}.`
   } catch (reason) {
     message.value =
       reason instanceof Error ? reason.message : 'Enrollment belum dapat diselesaikan.'
@@ -125,6 +133,7 @@ onMounted(loadStatus)
             >
           </div>
         </AppCard>
+        <CaptureAngleGuide v-if="status?.status === 'in_progress'" :accepted-count="accepted" />
         <AppCard>
           <div class="flex items-end justify-between">
             <div>
@@ -156,17 +165,13 @@ onMounted(loadStatus)
             </div>
           </div>
         </AppCard>
-        <p
+        <AppAlert
           v-if="message"
-          class="rounded-lg p-3 text-sm font-semibold"
-          :class="
-            message.includes('ditolak') || message.includes('gagal')
-              ? 'bg-coral-500/10 text-coral-500'
-              : 'bg-mint-100 text-mint-600'
-          "
-        >
-          {{ message }}
-        </p>
+          :variant="message.includes('ditolak') || message.includes('gagal') ? 'error' : 'success'"
+          :message="message"
+          dismissible
+          @dismiss="message = ''"
+        />
         <BaseButton
           v-if="status?.status === 'pending' || !status"
           class="w-full"
@@ -190,8 +195,14 @@ onMounted(loadStatus)
         <div v-else class="rounded-lg border border-mint-500/20 bg-mint-100 p-4 text-center">
           <CircleCheck :size="28" class="mx-auto text-mint-600" />
           <p class="mt-2 font-bold">Wajah sudah terdaftar</p>
-          <p class="mt-1 text-xs text-ink-600">Anda siap menggunakan presensi wajah.</p>
+          <p class="mt-1 text-xs text-ink-600">
+            Anda siap menggunakan presensi wajah.
+            <span v-if="embeddingProvider" class="font-bold uppercase"
+              >Provider: {{ embeddingProvider }}</span
+            >
+          </p>
         </div>
+        <EnrollmentSampleMetrics :samples="samples" />
       </div>
     </div>
   </div>
