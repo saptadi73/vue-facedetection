@@ -1,0 +1,76 @@
+@import 'tailwindcss';
+@import '@fontsource-variable/manrope';
+@import '@fontsource-variable/plus-jakarta-sans';
+
+@theme {
+  --font-sans: 'Manrope Variable', sans-serif;
+  --font-display: 'Plus Jakarta Sans Variable', sans-serif;
+  --color-ink-950: #12201c;
+  --color-ink-800: #253b34;
+  --color-ink-600: #536b62;
+  --color-mint-50: #f1faf5;
+  --color-mint-100: #ddf3e6;
+  --color-mint-500: #1b9a65;
+  --color-mint-600: #137c50;
+  --color-coral-500: #ef6b57;
+  --color-sun-400: #f2c94c;
+  --color-paper: #fbfcf9;
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    background: #eef3ef;
+  }
+
+  body {
+    min-width: 320px;
+    min-height: 100vh;
+    margin: 0;
+    color: var(--color-ink-950);
+    background:
+      radial-gradient(circle at 8% 4%, rgb(27 154 101 / 0.1), transparent 24rem),
+      linear-gradient(180deg, #f7faf7 0%, #edf3ee 100%);
+    font-family: var(--font-sans);
+    letter-spacing: 0;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+  }
+
+  button,
+  a {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+@layer components {
+  .page-enter-active,
+  .page-leave-active {
+    transition:
+      opacity 180ms ease,
+      transform 180ms ease;
+  }
+
+  .page-enter-from,
+  .page-leave-to {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  .focus-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-500 focus-visible:ring-offset-2;
+  }
+
+  .field {
+    @apply w-full rounded-lg border border-black/10 bg-white px-3.5 py-3 text-sm text-ink-950 placeholder:text-ink-600/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-500 focus-visible:ring-offset-2;
+  }
+}
