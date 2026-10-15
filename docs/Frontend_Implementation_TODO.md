@@ -15,6 +15,7 @@ FastAPI Face Detection dan modul HR Odoo.
 - [x] Tailwind CSS 4 terhubung melalui plugin Vite
 - [x] Font Manrope dan Plus Jakarta Sans tersedia secara lokal
 - [x] Library icon `@lucide/vue` tersedia
+- [x] Ikon Facework konsisten pada aplikasi, favicon, dan web app manifest
 - [x] Axios client menggunakan standard response envelope FastAPI
 - [x] ApexCharts dan wrapper Vue tersedia
 - [x] Konfigurasi environment terdokumentasi dalam `.env.example`

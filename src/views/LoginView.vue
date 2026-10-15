@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { Eye, EyeOff, Fingerprint, LockKeyhole, Server, UserRound } from '@lucide/vue'
+import { Eye, EyeOff, LockKeyhole, Server, UserRound } from '@lucide/vue'
 
 import BaseButton from '@/components/ui/BaseButton.vue'
 import { useAuthStore } from '@/stores/auth'
@@ -43,7 +43,7 @@ async function submit() {
       />
       <div class="relative flex items-center gap-3">
         <div class="grid size-11 place-items-center rounded-lg bg-mint-500">
-          <Fingerprint :size="24" />
+          <img src="/facework-icon.svg" alt="" class="size-11 rounded-lg" />
         </div>
         <span class="font-display text-xl font-extrabold">Facework</span>
       </div>
@@ -63,7 +63,7 @@ async function submit() {
       <div class="w-full max-w-md">
         <div class="mb-10 flex items-center gap-3 lg:hidden">
           <div class="grid size-11 place-items-center rounded-lg bg-ink-950 text-white">
-            <Fingerprint :size="23" />
+            <img src="/facework-icon.svg" alt="" class="size-11 rounded-lg" />
           </div>
           <span class="font-display text-xl font-extrabold">Facework</span>
         </div>

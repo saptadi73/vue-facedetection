@@ -1,0 +1,17 @@
+{
+  "name": "Facework",
+  "short_name": "Facework",
+  "description": "Presensi wajah dan HR self service",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f7f8f5",
+  "theme_color": "#12201c",
+  "icons": [
+    {
+      "src": "/facework-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

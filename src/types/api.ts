@@ -41,12 +41,17 @@ export interface AttendanceRequest {
   longitude: number
   gps_accuracy_meters: number
   gps_provider: 'browser'
+  attendance_context: 'office' | 'customer_visit'
+  visit_partner?: string
+  visit_note?: string
 }
 
 export interface AttendanceResult {
   attempt_id: number
   event_id?: string
   action: 'checkin' | 'checkout'
+  attendance_context?: 'office' | 'customer_visit'
+  visit_partner?: string | null
   matched: boolean
   employee_id: string | null
   similarity: number

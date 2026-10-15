@@ -24,6 +24,9 @@ import type { AttendanceResult } from '@/types/api'
 const camera = ref<InstanceType<typeof CameraPreview> | null>(null)
 const toast = useToastStore()
 const action = ref<'checkin' | 'checkout'>('checkin')
+const attendanceContext = ref<'office' | 'customer_visit'>('office')
+const visitPartner = ref('')
+const visitNote = ref('')
 const submitting = ref(false)
 const submitError = ref<ApiErrorPresentation | null>(null)
 const result = ref<AttendanceResult | null>(null)
@@ -44,7 +47,10 @@ const locationLabel = computed(() =>
         ? 'Akurasi rendah'
         : 'Lokasi belum tersedia',
 )
-const canSubmit = computed(() => Boolean(coords.value && quality.value !== 'poor'))
+const canSubmit = computed(() => Boolean(
+  coords.value && quality.value !== 'poor' &&
+    (attendanceContext.value === 'office' || (visitPartner.value.trim() && visitNote.value.trim())),
+))
 
 async function locate() {
   try {
@@ -78,6 +84,9 @@ async function submit() {
       longitude: coords.value.longitude,
       gps_accuracy_meters: coords.value.accuracy,
       gps_provider: 'browser',
+      attendance_context: attendanceContext.value,
+      visit_partner: attendanceContext.value === 'customer_visit' ? visitPartner.value.trim() : undefined,
+      visit_note: attendanceContext.value === 'customer_visit' ? visitNote.value.trim() : undefined,
     })
     toast.success(
       result.value.matched ? 'Presensi berhasil' : 'Wajah belum dikenali',
@@ -94,6 +103,11 @@ async function submit() {
   }
 }
 watch(action, () => {
+  eventId.value = crypto.randomUUID()
+  submitError.value = null
+  result.value = null
+})
+watch(attendanceContext, () => {
   eventId.value = crypto.randomUUID()
   submitError.value = null
   result.value = null
@@ -126,6 +140,28 @@ onMounted(locate)
             >
               <component :is="option.icon" :size="18" />{{ option.label }}
             </button>
+          </div>
+        </AppCard>
+        <AppCard>
+          <p class="mb-3 text-sm font-bold text-ink-800">Jenis lokasi presensi</p>
+          <div class="grid grid-cols-2 rounded-lg bg-black/5 p-1">
+            <button
+              v-for="option in [
+                { value: 'office', label: 'Kantor' },
+                { value: 'customer_visit', label: 'Kunjungan' },
+              ]"
+              :key="option.value"
+              class="focus-ring min-h-11 rounded-lg text-sm font-bold transition"
+              :class="attendanceContext === option.value ? 'bg-white text-ink-950 shadow-sm' : 'text-ink-600'"
+              @click="attendanceContext = option.value as typeof attendanceContext"
+            >
+              {{ option.label }}
+            </button>
+          </div>
+          <div v-if="attendanceContext === 'customer_visit'" class="mt-3 space-y-3">
+            <input v-model="visitPartner" class="w-full rounded-lg border border-black/10 px-3 py-3 text-sm" placeholder="Nama pelanggan/mitra" />
+            <textarea v-model="visitNote" class="w-full rounded-lg border border-black/10 px-3 py-3 text-sm" rows="3" placeholder="Catatan tujuan kunjungan" />
+            <p class="text-xs text-ink-600">Kebijakan group di Odoo tetap menjadi pemeriksa utama.</p>
           </div>
         </AppCard>
         <AppCard>

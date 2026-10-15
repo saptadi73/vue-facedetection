@@ -50,7 +50,7 @@ function logout() {
     >
       <div class="flex items-center gap-3 px-2">
         <div class="grid size-10 place-items-center rounded-lg bg-ink-950 text-white">
-          <Fingerprint :size="22" />
+          <img src="/facework-icon.svg" alt="" class="size-10 rounded-lg" />
         </div>
         <div>
           <p class="font-display font-extrabold">Facework</p>
@@ -100,7 +100,7 @@ function logout() {
       >
         <div class="flex items-center gap-2.5">
           <div class="grid size-9 place-items-center rounded-lg bg-ink-950 text-white">
-            <Fingerprint :size="19" />
+            <img src="/facework-icon.svg" alt="" class="size-9 rounded-lg" />
           </div>
           <span class="font-display font-extrabold">Facework</span>
         </div>

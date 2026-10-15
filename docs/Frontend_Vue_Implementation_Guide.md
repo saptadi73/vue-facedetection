@@ -14,6 +14,10 @@ FastAPI yang berkomunikasi dengan Odoo 14 melalui JWT `grt_external_api`; JWT
 Odoo tidak boleh dikirim atau disimpan di browser. `X-API-Key` hanya mode
 development/service-to-service.
 
+Halaman Presensi menyediakan konteks `office` dan `customer_visit`. Konteks
+kunjungan menampilkan nama pelanggan/mitra dan catatan tujuan, lalu mengirimnya
+bersama foto dan GPS. Odoo tetap menjadi otoritas group dan geofence.
+
 Dokumen ini adalah panduan implementasi frontend Vue.js untuk integrasi dengan FastAPI Face Attendance Service.
 
 ## 1. Tujuan Frontend
