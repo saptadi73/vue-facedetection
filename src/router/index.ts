@@ -29,6 +29,7 @@ const router = createRouter({
         { path: 'time-off', name: 'time-off', component: () => import('@/views/TimeOffView.vue') },
         { path: 'overtime', name: 'overtime', component: () => import('@/views/OvertimeView.vue') },
         { path: 'payslips', name: 'payslips', component: () => import('@/views/PayslipsView.vue') },
+        { path: 'help', name: 'help', component: () => import('@/views/HelpView.vue') },
       ],
     },
     { path: '/:pathMatch(.*)*', redirect: '/' },

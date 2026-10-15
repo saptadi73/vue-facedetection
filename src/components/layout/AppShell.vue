@@ -9,6 +9,7 @@ import {
   Clock3,
   Fingerprint,
   History,
+  CircleHelp,
   LogOut,
 } from '@lucide/vue'
 
@@ -25,6 +26,7 @@ const nav = [
   { label: 'Cuti', to: '/time-off', icon: CalendarDays },
   { label: 'Lembur', to: '/overtime', icon: Clock3 },
   { label: 'Gaji', to: '/payslips', icon: Banknote },
+  { label: 'Bantuan', to: '/help', icon: CircleHelp },
 ]
 const initials = computed(
   () =>
