@@ -21,6 +21,7 @@ export function useCamera() {
   const error = ref('')
 
   async function refreshDevices() {
+    if (!navigator.mediaDevices?.enumerateDevices) return devices.value
     const mediaDevices = await navigator.mediaDevices.enumerateDevices()
     devices.value = mediaDevices
       .filter((device) => device.kind === 'videoinput')
@@ -34,8 +35,18 @@ export function useCamera() {
   async function startCamera(video: HTMLVideoElement, deviceId?: string) {
     stopCamera()
     error.value = ''
+
+    if (!window.isSecureContext) {
+      error.value = 'Kamera hanya dapat digunakan melalui HTTPS.'
+      throw new Error(error.value)
+    }
+    if (!navigator.mediaDevices?.getUserMedia) {
+      error.value = 'Browser ini tidak mendukung akses kamera. Gunakan Chrome versi terbaru.'
+      throw new Error(error.value)
+    }
+
     try {
-      stream.value = await navigator.mediaDevices.getUserMedia({
+      const preferredConstraints: MediaStreamConstraints = {
         audio: false,
         video: {
           deviceId: deviceId ? { exact: deviceId } : undefined,
@@ -43,18 +54,45 @@ export function useCamera() {
           width: { ideal: 640 },
           height: { ideal: 480 },
         },
-      })
+      }
+      const fallbackConstraints: MediaStreamConstraints = {
+        audio: false,
+        video: true,
+      }
+      let lastError: unknown
+      for (const constraints of [preferredConstraints, fallbackConstraints]) {
+        try {
+          stream.value = await navigator.mediaDevices.getUserMedia(constraints)
+          break
+        } catch (reason) {
+          lastError = reason
+          if (reason instanceof DOMException && reason.name === 'NotAllowedError') throw reason
+        }
+      }
+      if (!stream.value) throw lastError ?? new Error('Kamera tidak tersedia.')
       video.srcObject = stream.value
       video.playsInline = true
       await video.play()
       mirrored.value = stream.value.getVideoTracks()[0]?.getSettings().facingMode !== 'environment'
       isReady.value = true
-      await refreshDevices()
+      try {
+        await refreshDevices()
+      } catch {
+        // Some mobile browsers allow the stream but restrict device enumeration.
+      }
     } catch (reason) {
-      error.value =
-        reason instanceof DOMException && reason.name === 'NotAllowedError'
-          ? 'Izin kamera ditolak. Aktifkan kamera dari pengaturan browser.'
-          : 'Kamera tidak dapat digunakan. Pastikan tidak dipakai aplikasi lain.'
+      const name = reason instanceof DOMException ? reason.name : ''
+      const messages: Record<string, string> = {
+        NotAllowedError: 'Izin kamera ditolak. Aktifkan izin kamera untuk situs ini dan Chrome.',
+        NotReadableError: 'Kamera sedang dipakai aplikasi lain atau diblokir sistem Android.',
+        OverconstrainedError: 'Kamera HP tidak mendukung mode yang diminta. Coba kamera lain.',
+        NotFoundError: 'Kamera tidak ditemukan pada perangkat ini.',
+        SecurityError: 'Akses kamera diblokir oleh pengaturan keamanan browser/perangkat.',
+      }
+      error.value = messages[name] ?? 'Kamera tidak dapat digunakan. Tutup aplikasi lain yang memakai kamera lalu coba lagi.'
+      stream.value?.getTracks().forEach((track) => track.stop())
+      stream.value = null
+      isReady.value = false
       throw reason
     }
   }

@@ -123,6 +123,21 @@ function toggleSection(id: string) {
       </div>
     </div>
 
+    <AppCard class="mt-4 border-l-4 border-l-coral-500">
+      <div class="flex items-start gap-3">
+        <ShieldCheck :size="20" class="mt-0.5 text-coral-500" />
+        <div>
+          <h2 class="font-display font-extrabold">Prasyarat wajib sebelum presensi</h2>
+          <ul class="mt-2 list-disc space-y-1 pl-4 text-sm leading-6 text-ink-600">
+            <li>User harus memiliki akun Odoo yang aktif.</li>
+            <li>Akun Odoo harus terhubung dengan data employee di Odoo.</li>
+            <li>Foto wajah wajib di-upload/daftarkan terlebih dahulu melalui menu Wajah.</li>
+            <li>Presensi tidak dapat dilakukan sebelum pendaftaran wajah selesai.</li>
+          </ul>
+        </div>
+      </div>
+    </AppCard>
+
     <AppCard class="mt-4">
       <h2 class="font-display text-lg font-extrabold">FAQ singkat</h2>
       <div class="mt-3 grid gap-3 text-sm text-ink-600 md:grid-cols-2">
